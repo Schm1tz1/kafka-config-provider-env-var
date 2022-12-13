@@ -15,11 +15,13 @@ class EnvVarConfigProviderTest {
 
     @BeforeEach
     public void setup() {
-        Map<String, String> testEnvVars = new HashMap<>() {{
-            put("var1", "value1");
-            put("var2", "value2");
-            put("var3", "value3");
-        }};
+        Map<String, String> testEnvVars = new HashMap<>() {
+            {
+                put("var1", "value1");
+                put("var2", "value2");
+                put("var3", "value3");
+            }
+        };
         envVarConfigProvider = new EnvVarConfigProvider(testEnvVars);
     }
 
