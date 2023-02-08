@@ -10,10 +10,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import static com.github.schm1tz1.kafka.EnvVarConfigProviderConfig.ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG;
 
 public class EnvVarConfigProvider implements ConfigProvider {
     private final Map<String, String> envVarMap;
+    private Pattern envVarPattern;
 
     public EnvVarConfigProvider() {
         envVarMap = getEnvVars();
@@ -27,6 +31,14 @@ public class EnvVarConfigProvider implements ConfigProvider {
 
     @Override
     public void configure(Map<String, ?> configs) {
+        if (configs.keySet().contains(ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG)) {
+            envVarPattern = Pattern.compile(
+                    String.valueOf(configs.get(ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG))
+            );
+        } else {
+            envVarPattern = Pattern.compile(".*");
+            log.info("No pattern for environment variables provided. Using default pattern '(.*)'.");
+        }
     }
 
     @Override
@@ -43,22 +55,34 @@ public class EnvVarConfigProvider implements ConfigProvider {
     }
 
     /**
-     * @param s    unused
+     * @param path    path, not used for environment variables
      * @param keys the keys whose values will be retrieved.
      * @return the configuration data.
      */
     @Override
-    public ConfigData get(String s, Set<String> keys) {
+    public ConfigData get(String path, Set<String> keys) {
+
+        if (path != null && !path.isEmpty()) {
+            log.error("Path is not supported for EnvVarConfigProvider, invalid value '{}'", path);
+            throw new ConfigException("Path is not supported for EnvVarConfigProvider, invalid value '" + path + "'");
+        }
 
         if (envVarMap == null) {
             return new ConfigData(new HashMap<>());
         }
 
+        Map<String, String> filteredEnvVarMap = envVarMap;
+
+        filteredEnvVarMap = envVarMap.entrySet().stream()
+                .filter(envVar -> envVarPattern.asPredicate().test(envVar.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
+                );
+
         if (keys == null) {
-            return new ConfigData(envVarMap);
+            return new ConfigData(filteredEnvVarMap);
         }
 
-        HashMap<String, String> filteredData = new HashMap<>(envVarMap);
+        HashMap<String, String> filteredData = new HashMap<>(filteredEnvVarMap);
         filteredData.keySet().retainAll(keys);
 
         return new ConfigData(filteredData);
