@@ -8,4 +8,4 @@ config.providers.env.class=com.github.schm1tz1.kafka.EnvVarConfigProvider
 ssl.key.password=${env:KEY_PASSPHRASE}
 ```
 
-There is also a Kafka Improvement Proposal [KIP-887](https://cwiki.apache.org/confluence/display/KAFKA/KIP-887%3A+Add+ConfigProvider+to+make+use+of+environment+variables) in place to add this feature to Apache Kafka.
+There is also a Kafka Improvement Proposal [KIP-887](https://cwiki.apache.org/confluence/display/KAFKA/KIP-887%3A+Add+ConfigProvider+to+make+use+of+environment+variables) merged into Apache Kafka trunk. Planned for v3.5.0.
