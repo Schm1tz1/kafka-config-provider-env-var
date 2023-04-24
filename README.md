@@ -1,6 +1,6 @@
 # kafka-config-provider-env-var [![Java CI with Maven](https://github.com/Schm1tz1/kafka-config-provider-env-var/actions/workflows/maven.yml/badge.svg)](https://github.com/Schm1tz1/kafka-config-provider-env-var/actions/workflows/maven.yml)
 This repository contains a **Kafka Configuration Provider for environment variables**. 
-It can be used to externalize configs and inject values of environment variales into property values. 
+It can be used to externalize configs and inject values of environment variables into property values. 
 To use this feature, simply add this jat to the classpath of your application and use it with the Apache Kafka ConfigProvider configuration (example for a ssl key provided via env var):
 ```properties
 config.providers=env
