@@ -1,8 +1,23 @@
 package com.github.schm1tz1.kafka;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import org.apache.kafka.common.config.ConfigData;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.provider.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +28,21 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.schm1tz1.kafka.EnvVarConfigProviderConfig.ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG;
-
+/**
+ * An implementation of {@link ConfigProvider} based on environment variables.
+ * Keys correspond to the names of the environment variables, paths are currently not being used.
+ * Using an allowlist pattern {@link EnvVarConfigProvider#ALLOWLIST_PATTERN_CONFIG} that supports regular expressions,
+ * it is possible to limit access to specific environment variables. Default allowlist pattern is ".*".
+ */
 public class EnvVarConfigProvider implements ConfigProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(EnvVarConfigProvider.class);
+
+    public static final String ALLOWLIST_PATTERN_CONFIG = "allowlist.pattern";
+    public static final String ALLOWLIST_PATTERN_CONFIG_DOC = "A pattern / regular expression that needs to match for environment variables" +
+            " to be used by this config provider.";
     private final Map<String, String> envVarMap;
-    private Pattern envVarPattern;
+    private Map<String, String> filteredEnvVarMap;
 
     public EnvVarConfigProvider() {
         envVarMap = getEnvVars();
@@ -27,18 +52,23 @@ public class EnvVarConfigProvider implements ConfigProvider {
         envVarMap = envVarsAsArgument;
     }
 
-    private static final Logger log = LoggerFactory.getLogger(EnvVarConfigProvider.class);
-
     @Override
     public void configure(Map<String, ?> configs) {
-        if (configs.keySet().contains(ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG)) {
+        Pattern envVarPattern;
+
+        if (configs.containsKey(ALLOWLIST_PATTERN_CONFIG)) {
             envVarPattern = Pattern.compile(
-                    String.valueOf(configs.get(ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG))
+                    String.valueOf(configs.get(ALLOWLIST_PATTERN_CONFIG))
             );
         } else {
             envVarPattern = Pattern.compile(".*");
             log.info("No pattern for environment variables provided. Using default pattern '(.*)'.");
         }
+
+        filteredEnvVarMap = envVarMap.entrySet().stream()
+                .filter(envVar -> envVarPattern.matcher(envVar.getKey()).matches())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
+                );
     }
 
     @Override
@@ -46,12 +76,12 @@ public class EnvVarConfigProvider implements ConfigProvider {
     }
 
     /**
-     * @param s unused
+     * @param path unused
      * @return returns environment variables as configuration
      */
     @Override
-    public ConfigData get(String s) {
-        return get(s, null);
+    public ConfigData get(String path) {
+        return get(path, null);
     }
 
     /**
@@ -67,22 +97,11 @@ public class EnvVarConfigProvider implements ConfigProvider {
             throw new ConfigException("Path is not supported for EnvVarConfigProvider, invalid value '" + path + "'");
         }
 
-        if (envVarMap == null) {
-            return new ConfigData(new HashMap<>());
-        }
-
-        Map<String, String> filteredEnvVarMap = envVarMap;
-
-        filteredEnvVarMap = envVarMap.entrySet().stream()
-                .filter(envVar -> envVarPattern.asPredicate().test(envVar.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
-                );
-
         if (keys == null) {
             return new ConfigData(filteredEnvVarMap);
         }
 
-        HashMap<String, String> filteredData = new HashMap<>(filteredEnvVarMap);
+        Map<String, String> filteredData = new HashMap<>(filteredEnvVarMap);
         filteredData.keySet().retainAll(keys);
 
         return new ConfigData(filteredData);
