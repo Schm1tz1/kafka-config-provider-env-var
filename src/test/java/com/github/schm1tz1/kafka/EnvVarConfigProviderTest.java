@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
 
-import static org.apache.kafka.common.config.provider.EnvVarConfigProvider.ALLOWLIST_PATTERN_CONFIG;
+import static com.github.schm1tz1.kafka.EnvVarConfigProvider.ALLOWLIST_PATTERN_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
