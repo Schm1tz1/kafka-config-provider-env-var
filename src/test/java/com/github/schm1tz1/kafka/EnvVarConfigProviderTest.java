@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
 
-import static com.github.schm1tz1.kafka.EnvVarConfigProviderConfig.ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG;
+import static org.apache.kafka.common.config.provider.EnvVarConfigProvider.ALLOWLIST_PATTERN_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class EnvVarConfigProviderTest {
 
     private EnvVarConfigProvider envVarConfigProvider = null;
+
     @BeforeEach
     public void setup() {
         Map<String, String> testEnvVars = new HashMap<String, String>() {
@@ -43,6 +44,7 @@ class EnvVarConfigProviderTest {
                 put("test_var1", "value1");
                 put("secret_var2", "value2");
                 put("new_var3", "value3");
+                put("not_so_secret_var4", "value4");
             }
         };
         envVarConfigProvider = new EnvVarConfigProvider(testEnvVars);
@@ -62,6 +64,7 @@ class EnvVarConfigProviderTest {
         assertEquals("value1", properties.data().get("test_var1"));
         assertEquals("value2", properties.data().get("secret_var2"));
         assertEquals("value3", properties.data().get("new_var3"));
+        assertEquals("value4", properties.data().get("not_so_secret_var4"));
     }
 
     @Test
@@ -83,22 +86,32 @@ class EnvVarConfigProviderTest {
     }
 
     @Test
-    void testGetWhitelistedEnvVars() {
-        Set<String> whiteList = new HashSet<>(Arrays.asList("test_var1", "secret_var2"));
-        Set<String> keys = envVarConfigProvider.get(null, whiteList).data().keySet();
-        assertEquals(whiteList, keys);
+    void testGetEnvVarsByKeyList() {
+        Set<String> keyList = new HashSet<>(Arrays.asList("test_var1", "secret_var2"));
+        Set<String> keys = envVarConfigProvider.get(null, keyList).data().keySet();
+        assertEquals(keyList, keys);
     }
+
     @Test
     void testNotNullPathNonEmptyThrowsException() {
         assertThrows(ConfigException.class, () -> envVarConfigProvider.get("test-path", Collections.singleton("test_var1")));
     }
 
-    @Test void testRegExpEnvVars() {
-        Map<String, String> testConfigMap = Collections.singletonMap(ENV_VAR_CONFIG_PROVIDER_PATTERN_CONFIG, "secret_.*");
+    @Test void testRegExpEnvVarsSingleEntryKeyList() {
+        Map<String, String> testConfigMap = Collections.singletonMap(ALLOWLIST_PATTERN_CONFIG, "secret_.*");
         envVarConfigProvider.configure(testConfigMap);
+        Set<String> keyList = Collections.singleton("secret_var2");
+        Set<String> keys = envVarConfigProvider.get(null, Collections.singleton("secret_var2")).data().keySet();
 
-        assertEquals(1, envVarConfigProvider.get(null, Collections.singleton("secret_var2")).data().size());
-        assertEquals(1, envVarConfigProvider.get("").data().size());
+        assertEquals(keyList, keys);
+    }
+
+    @Test void testRegExpEnvVarsNoKeyList() {
+        Map<String, String> testConfigMap = Collections.singletonMap(ALLOWLIST_PATTERN_CONFIG, "secret_.*");
+        envVarConfigProvider.configure(testConfigMap);
+        Set<String> keys = envVarConfigProvider.get("").data().keySet();
+
+        assertEquals(Collections.singleton("secret_var2"), keys);
     }
 
 }
