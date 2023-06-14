@@ -6,10 +6,10 @@
 
     <groupId>io.github.schm1tz1.kafka</groupId>
     <artifactId>kafka-config-provider-env-var</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <name>Kafka Env-Var Config Provider</name>
     <description>Kafka Configuration Provider for environment variables as also provided for KIP-887</description>
-    <url>https://github.com/${project.github.repository}</url>
+    <url>https://github.com/Schm1tz1/kafka-config-provider-env-var</url>
     <inceptionYear>2023</inceptionYear>
 
     <properties>
@@ -30,7 +30,7 @@
         <nexus.maven.version>1.6.13</nexus.maven.version>
         <gpg.keyname>0x0E3F1D60</gpg.keyname>
         <project.github.repository>Schm1tz1/kafka-config-provider-env-var</project.github.repository>
-        <repository.url>git@github.com:${project.github.repository}.git</repository.url>
+        <repository.url>git@github.com:Schm1tz1/kafka-config-provider-env-var.git</repository.url>
         <junit.jupiter.version>5.9.2</junit.jupiter.version>
         <nexus.url>https://s01.oss.sonatype.org</nexus.url>
     </properties>
